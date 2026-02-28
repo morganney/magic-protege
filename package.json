@@ -1,0 +1,40 @@
+{
+  "name": "magic-protege",
+  "version": "0.1.0",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "prettier": "prettier --write .",
+    "dev": "next dev",
+    "build": "NODE_ENV=production next build",
+    "start": "next start",
+    "lint": "eslint --max-warnings=0",
+    "check-types": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^3.0.36",
+    "@ai-sdk/react": "^3.0.106",
+    "ai": "^6.0.104",
+    "magic-crayon": "^1.0.0-rc.1",
+    "next": "16.1.6",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.6",
+    "eslint-plugin-react-you-might-not-need-an-effect": "^0.9.2",
+    "prettier": "^3.8.1",
+    "typescript": "^5"
+  },
+  "prettier": {
+    "arrowParens": "avoid",
+    "printWidth": 90,
+    "semi": false,
+    "singleQuote": true
+  }
+}
