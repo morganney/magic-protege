@@ -33,7 +33,10 @@ const drawPathCommandSchema = z.object({
     strokeWidth: z.number().min(1).max(40),
     lineCap: z.enum(['butt', 'round', 'square']).optional(),
     lineJoin: z.enum(['bevel', 'round', 'miter']).optional(),
-    color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+    color: z
+      .string()
+      .regex(/^#[0-9a-fA-F]{6}$/)
+      .optional(),
   }),
 })
 
@@ -48,7 +51,10 @@ const drawCircleCommandSchema = z.object({
     strokeWidth: z.number().min(1).max(40),
     lineCap: z.enum(['butt', 'round', 'square']).optional(),
     lineJoin: z.enum(['bevel', 'round', 'miter']).optional(),
-    color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+    color: z
+      .string()
+      .regex(/^#[0-9a-fA-F]{6}$/)
+      .optional(),
   }),
 })
 
@@ -374,8 +380,7 @@ export async function POST(request: Request) {
         }
       : undefined
 
-  const effectiveApplyCommandsResult =
-    applyCommandsResult ?? fallbackApplyCommandsResult
+  const effectiveApplyCommandsResult = applyCommandsResult ?? fallbackApplyCommandsResult
 
   const responseToolResults = fallbackApplyCommandsResult
     ? [...mappedToolResults, fallbackApplyCommandsResult]

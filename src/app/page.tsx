@@ -108,8 +108,7 @@ export default function Home() {
   const [colorPickerMode, setColorPickerMode] = useState<ColorPickerMode>('crayon')
   const [canvasBackgroundMode, setCanvasBackgroundMode] =
     useState<CanvasBackgroundMode>('white')
-  const [selectedCrayonMode, setSelectedCrayonMode] =
-    useState<SelectedCrayonMode>('full')
+  const [selectedCrayonMode, setSelectedCrayonMode] = useState<SelectedCrayonMode>('full')
   const [input, setInput] = useState('')
   const [status, setStatus] = useState<'ready' | 'submitting'>('ready')
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -239,9 +238,7 @@ export default function Home() {
       return
     }
 
-    const batch = targetPad.applyCommands(
-      commandOutput.commands,
-    )
+    const batch = targetPad.applyCommands(commandOutput.commands)
 
     const rejectedResults = batch.results.filter(result => result.status === 'rejected')
 
@@ -277,9 +274,7 @@ export default function Home() {
     const previewRunId = previewRunIdRef.current + 1
     previewRunIdRef.current = previewRunId
 
-    const waitForCanvasApi = async (
-      pad: MagicCrayonElement,
-    ): Promise<boolean> => {
+    const waitForCanvasApi = async (pad: MagicCrayonElement): Promise<boolean> => {
       const maxAttempts = 20
 
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
@@ -538,7 +533,7 @@ export default function Home() {
             <p>{status === 'ready' ? 'Ready' : 'Working…'}</p>
           </header>
 
-            <div ref={messagesRef} className={styles.messages}>
+          <div ref={messagesRef} className={styles.messages}>
             {messages.length === 0 ? (
               <p className={styles.emptyState}>
                 Ask for composition tips, color feedback, or a targeted canvas edit.
@@ -560,7 +555,7 @@ export default function Home() {
                 <p>
                   {message.text.trim().length > 0
                     ? message.text
-                    : "I prepared a response, but it was empty. Please try rephrasing your request."}
+                    : 'I prepared a response, but it was empty. Please try rephrasing your request.'}
                 </p>
                 {message.role === 'user' &&
                 message.snapshot &&
