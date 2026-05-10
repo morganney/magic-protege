@@ -10,6 +10,9 @@ You must be warm, concise, and concrete.
 Ground your response in the actual image content when an image is provided.
 Do not invent objects, colors, or details that are not clearly visible.
 If uncertain, explicitly say what is uncertain.
+The only drawable command kinds available are draw-path, draw-circle, and erase-rect.
+When asked what commands are available, list only those command kinds.
+When asked to draw complex objects (for example, trees), decompose them into multiple primitive commands.
 When no user intent is clear, ask one clarifying question.
 When user asks for critique, provide actionable and age-appropriate feedback.
 When user asks what to do next, return concise step suggestions.
@@ -18,31 +21,45 @@ Never apply destructive changes without explicit user confirmation in chat.`
 
 const drawPathCommandSchema = z.object({
   kind: z.literal('draw-path'),
-  color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-  strokeWidth: z.number().min(1).max(40),
-  points: z.array(
-    z.object({
-      xPercent: z.number().min(0).max(100),
-      yPercent: z.number().min(0).max(100),
-    }),
-  ).min(2),
+  points: z
+    .array(
+      z.object({
+        x: z.number().min(0).max(100),
+        y: z.number().min(0).max(100),
+      }),
+    )
+    .min(2),
+  style: z.object({
+    strokeWidth: z.number().min(1).max(40),
+    lineCap: z.enum(['butt', 'round', 'square']).optional(),
+    lineJoin: z.enum(['bevel', 'round', 'miter']).optional(),
+    color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+  }),
 })
 
 const drawCircleCommandSchema = z.object({
   kind: z.literal('draw-circle'),
-  color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-  strokeWidth: z.number().min(1).max(40),
-  centerXPercent: z.number().min(0).max(100),
-  centerYPercent: z.number().min(0).max(100),
-  radiusPercent: z.number().min(1).max(50),
+  center: z.object({
+    x: z.number().min(0).max(100),
+    y: z.number().min(0).max(100),
+  }),
+  radius: z.number().min(1).max(50),
+  style: z.object({
+    strokeWidth: z.number().min(1).max(40),
+    lineCap: z.enum(['butt', 'round', 'square']).optional(),
+    lineJoin: z.enum(['bevel', 'round', 'miter']).optional(),
+    color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),
+  }),
 })
 
 const eraseRectCommandSchema = z.object({
   kind: z.literal('erase-rect'),
-  xPercent: z.number().min(0).max(95),
-  yPercent: z.number().min(0).max(95),
-  widthPercent: z.number().min(5).max(100),
-  heightPercent: z.number().min(5).max(100),
+  rect: z.object({
+    x: z.number().min(0).max(95),
+    y: z.number().min(0).max(95),
+    width: z.number().min(5).max(100),
+    height: z.number().min(5).max(100),
+  }),
 })
 
 const canvasCommandSchema = z.discriminatedUnion('kind', [
@@ -72,38 +89,114 @@ function isDrawIntent(text: string): boolean {
   return drawIntentPattern.test(text)
 }
 
+type DrawPathCommand = {
+  kind: 'draw-path'
+  points: Array<{ x: number; y: number }>
+  style: {
+    strokeWidth: number
+    color: string
+  }
+}
+
+type DrawCircleCommand = {
+  kind: 'draw-circle'
+  center: { x: number; y: number }
+  radius: number
+  style: {
+    strokeWidth: number
+    color: string
+  }
+}
+
+type FallbackCommand = DrawPathCommand | DrawCircleCommand
+
+function pushTreeCommands(
+  commands: FallbackCommand[],
+  centerX: number,
+  groundY: number,
+  scale: number,
+) {
+  const trunkHeight = 14 * scale
+  const canopyRadius = 4 * scale
+
+  commands.push({
+    kind: 'draw-path',
+    style: {
+      color: '#8D6E63',
+      strokeWidth: Math.max(2, Math.round(3 * scale)),
+    },
+    points: [
+      { x: centerX, y: groundY },
+      { x: centerX, y: groundY - trunkHeight },
+    ],
+  })
+
+  commands.push({
+    kind: 'draw-circle',
+    center: { x: centerX, y: groundY - trunkHeight - canopyRadius + 0.5 },
+    radius: canopyRadius,
+    style: {
+      color: '#2E7D32',
+      strokeWidth: Math.max(2, Math.round(2 * scale)),
+    },
+  })
+
+  commands.push({
+    kind: 'draw-circle',
+    center: {
+      x: centerX - canopyRadius + 0.5,
+      y: groundY - trunkHeight - canopyRadius + 1.5,
+    },
+    radius: canopyRadius * 0.85,
+    style: {
+      color: '#388E3C',
+      strokeWidth: Math.max(2, Math.round(2 * scale)),
+    },
+  })
+
+  commands.push({
+    kind: 'draw-circle',
+    center: {
+      x: centerX + canopyRadius - 0.5,
+      y: groundY - trunkHeight - canopyRadius + 1.5,
+    },
+    radius: canopyRadius * 0.85,
+    style: {
+      color: '#388E3C',
+      strokeWidth: Math.max(2, Math.round(2 * scale)),
+    },
+  })
+}
+
 function buildFallbackCanvasUpdate(text: string) {
-  const commands: Array<
-    | {
-        kind: 'draw-path'
-        color: string
-        strokeWidth: number
-        points: Array<{ xPercent: number; yPercent: number }>
-      }
-    | {
-        kind: 'draw-circle'
-        color: string
-        strokeWidth: number
-        centerXPercent: number
-        centerYPercent: number
-        radiusPercent: number
-      }
-  > = []
+  const commands: FallbackCommand[] = []
+
+  if (/\b(tree|trees|forest|pine|oak)\b/i.test(text)) {
+    const treeCenters = /\b(several|many|multiple|forest)\b/i.test(text)
+      ? [24, 50, 76]
+      : [50]
+
+    for (const centerX of treeCenters) {
+      pushTreeCommands(commands, centerX, 86, 1)
+    }
+  }
 
   if (/grass/i.test(text)) {
     commands.push({
       kind: 'draw-path',
-      color: '#43A047',
-      strokeWidth: 5,
+      style: {
+        color: '#43A047',
+        strokeWidth: 5,
+      },
       points: [
-        { xPercent: 12, yPercent: 88 },
-        { xPercent: 20, yPercent: 87 },
-        { xPercent: 28, yPercent: 88 },
-        { xPercent: 36, yPercent: 87 },
-        { xPercent: 44, yPercent: 88 },
-        { xPercent: 52, yPercent: 87.5 },
-        { xPercent: 60, yPercent: 88 },
-        { xPercent: 68, yPercent: 87.5 },
+        { x: 12, y: 88 },
+        { x: 20, y: 87 },
+        { x: 28, y: 88 },
+        { x: 36, y: 87 },
+        { x: 44, y: 88 },
+        { x: 52, y: 87.5 },
+        { x: 60, y: 88 },
+        { x: 68, y: 87.5 },
       ],
     })
   }
@@ -111,25 +204,28 @@ function buildFallbackCanvasUpdate(text: string) {
   if (/sun|sunshine/i.test(text)) {
     commands.push({
       kind: 'draw-circle',
-      color: '#FBBF24',
-      strokeWidth: 4,
-      centerXPercent: 84,
-      centerYPercent: 16,
-      radiusPercent: 4,
+      center: { x: 84, y: 16 },
+      radius: 4,
+      style: {
+        color: '#FBBF24',
+        strokeWidth: 4,
+      },
     })
   }
 
   if (commands.length === 0) {
     commands.push({
       kind: 'draw-path',
-      color: '#43A047',
-      strokeWidth: 5,
+      style: {
+        color: '#43A047',
+        strokeWidth: 5,
+      },
       points: [
-        { xPercent: 14, yPercent: 86 },
-        { xPercent: 22, yPercent: 88 },
-        { xPercent: 30, yPercent: 86.5 },
-        { xPercent: 38, yPercent: 88 },
-        { xPercent: 46, yPercent: 86.5 },
+        { x: 14, y: 86 },
+        { x: 22, y: 88 },
+        { x: 30, y: 86.5 },
+        { x: 38, y: 88 },
+        { x: 46, y: 86.5 },
       ],
     })
   }
@@ -210,7 +306,7 @@ export async function POST(request: Request) {
       }),
       apply_canvas_commands: tool({
         description:
-          'Return one or more concrete canvas commands to apply, such as draw-path, draw-circle, or erase-rect. Always include a brief confirmation prompt.',
+          'Return one or more concrete canvas commands to apply. Only use draw-path, draw-circle, and erase-rect. For complex objects, compose multiple primitive commands. Always include a brief confirmation prompt.',
         inputSchema: z.object({
           reason: z.string().min(4).max(220),
           confirmationPrompt: z.string().min(6).max(220),

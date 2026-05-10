@@ -2,11 +2,18 @@
 
 import Image from 'next/image'
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
+import type {
+  CommandApiStateV1,
+  CommandBatchResultV1,
+  MagicCrayonCommandV1,
+} from 'magic-crayon/command-api'
 import styles from './page.module.css'
 
 type MagicCrayonElement = HTMLElement & {
   setDrawingData: (data: Blob | string) => Promise<void>
   getDrawingData: (serialization?: 'blob' | 'dataurl') => Promise<Blob | string>
+  applyCommands: (commands: MagicCrayonCommandV1[]) => CommandBatchResultV1
+  getCommandState: () => CommandApiStateV1
 }
 
 type ColorPickerMode = 'crayon' | 'swatch' | 'input'
@@ -20,36 +27,10 @@ type UpdateCanvasOutput = {
   reason: string
 }
 
-type CanvasPoint = {
-  xPercent: number
-  yPercent: number
-}
-
-type DrawPathCommand = {
-  kind: 'draw-path'
-  color: string
-  strokeWidth: number
-  points: CanvasPoint[]
-}
-
-type DrawCircleCommand = {
-  kind: 'draw-circle'
-  color: string
-  strokeWidth: number
-  centerXPercent: number
-  centerYPercent: number
-  radiusPercent: number
-}
-
-type EraseRectCommand = {
-  kind: 'erase-rect'
-  xPercent: number
-  yPercent: number
-  widthPercent: number
-  heightPercent: number
-}
-
-type CanvasCommand = DrawPathCommand | DrawCircleCommand | EraseRectCommand
+type CanvasCommand = Extract<
+  MagicCrayonCommandV1,
+  { kind: 'draw-path' | 'draw-circle' | 'erase-rect' }
+>
 
 type ToolResult =
   | { toolName: 'suggest_next_step'; output: { suggestions: string[] } }
@@ -111,10 +92,6 @@ function extractSuggestions(messages: ChatMessage[]): string[] {
   }
 
   return Array.from(new Set(suggestions)).slice(-4)
-}
-
-function toNumber(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value))
 }
 
 export default function Home() {
@@ -258,112 +235,19 @@ export default function Home() {
     commandOutput: UpdateCanvasOutput,
     targetPad: MagicCrayonElement | null = crayonRef.current,
   ) => {
-    const pad = targetPad as
-      | (MagicCrayonElement & {
-          context2d?: {
-            width: number
-            height: number
-            lineWidth: number
-            strokeStyle: string | CanvasGradient | CanvasPattern
-            pencilMode: string
-            compositing: GlobalCompositeOperation
-            startDrawing: (point: DOMPoint) => void
-            draw: (point: DOMPoint) => void
-            stopDrawing: () => void
-          }
-        })
-      | null
-
-    if (!pad?.context2d) {
+    if (!targetPad) {
       return
     }
 
-    const ctx = pad.context2d
-    const width = ctx.width
-    const height = ctx.height
-    const previousLineWidth = ctx.lineWidth
-    const previousStrokeStyle = ctx.strokeStyle
-    const previousPencilMode = ctx.pencilMode
-    const previousCompositing = ctx.compositing
+    const batch = targetPad.applyCommands(
+      commandOutput.commands,
+    )
 
-    const drawLine = (fromX: number, fromY: number, toX: number, toY: number) => {
-      ctx.startDrawing(new DOMPoint(fromX, fromY))
+    const rejectedResults = batch.results.filter(result => result.status === 'rejected')
 
-      try {
-        ctx.draw(new DOMPoint(toX, toY))
-      } finally {
-        ctx.stopDrawing()
-      }
+    if (rejectedResults.length > 0) {
+      throw new Error('One or more canvas commands were rejected.')
     }
-
-    for (const command of commandOutput.commands) {
-      if (command.kind === 'erase-rect') {
-        const x = toNumber((command.xPercent / 100) * width, 0, width)
-        const y = toNumber((command.yPercent / 100) * height, 0, height)
-        const rectWidth = toNumber((command.widthPercent / 100) * width, 8, width)
-        const rectHeight = toNumber((command.heightPercent / 100) * height, 8, height)
-        const right = toNumber(x + rectWidth, 0, width)
-        const bottom = toNumber(y + rectHeight, 0, height)
-
-        ctx.pencilMode = 'erase'
-        ctx.compositing = 'destination-out'
-        ctx.lineWidth = Math.max(18, previousLineWidth * 3)
-
-        const step = Math.max(4, Math.floor(ctx.lineWidth * 0.8))
-        for (let row = y; row <= bottom; row += step) {
-          drawLine(x, row, right, row)
-        }
-        continue
-      }
-
-      ctx.pencilMode = 'draw'
-      ctx.compositing = 'source-over'
-      ctx.strokeStyle = command.color
-      ctx.lineWidth = toNumber(command.strokeWidth, 1, 40)
-
-      if (command.kind === 'draw-path') {
-        const [firstPoint, ...otherPoints] = command.points
-
-        if (!firstPoint || otherPoints.length === 0) {
-          continue
-        }
-
-        let previousX = toNumber((firstPoint.xPercent / 100) * width, 0, width)
-        let previousY = toNumber((firstPoint.yPercent / 100) * height, 0, height)
-
-        for (const point of otherPoints) {
-          const nextX = toNumber((point.xPercent / 100) * width, 0, width)
-          const nextY = toNumber((point.yPercent / 100) * height, 0, height)
-          drawLine(previousX, previousY, nextX, nextY)
-          previousX = nextX
-          previousY = nextY
-        }
-
-        continue
-      }
-
-      const centerX = toNumber((command.centerXPercent / 100) * width, 0, width)
-      const centerY = toNumber((command.centerYPercent / 100) * height, 0, height)
-      const radius = toNumber((command.radiusPercent / 100) * Math.min(width, height), 4, Math.min(width, height) / 2)
-      const stepCount = 48
-      let startX = centerX + radius
-      let startY = centerY
-
-      for (let step = 1; step <= stepCount; step += 1) {
-        const theta = (Math.PI * 2 * step) / stepCount
-        const nextX = centerX + radius * Math.cos(theta)
-        const nextY = centerY + radius * Math.sin(theta)
-        drawLine(startX, startY, nextX, nextY)
-        startX = nextX
-        startY = nextY
-      }
-    }
-
-    ctx.stopDrawing()
-    ctx.lineWidth = previousLineWidth
-    ctx.strokeStyle = previousStrokeStyle
-    ctx.pencilMode = previousPencilMode
-    ctx.compositing = previousCompositing
   }
 
   useEffect(() => {
@@ -393,14 +277,18 @@ export default function Home() {
     const previewRunId = previewRunIdRef.current + 1
     previewRunIdRef.current = previewRunId
 
-    const waitForCanvasContext = async (
+    const waitForCanvasApi = async (
       pad: MagicCrayonElement,
     ): Promise<boolean> => {
       const maxAttempts = 20
 
       for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-        if ((pad as MagicCrayonElement & { context2d?: unknown }).context2d) {
+        try {
+          pad.getCommandState()
+
           return true
+        } catch {
+          // Wait for the element to finish connecting and initialize command APIs.
         }
 
         await new Promise<void>(resolve => {
@@ -445,7 +333,7 @@ export default function Home() {
       previewPad.style.height = `${Math.max(1, Math.round(rect.height))}px`
 
       previewHostNode.replaceChildren(previewPad)
-      const hasContext = await waitForCanvasContext(previewPad)
+      const hasContext = await waitForCanvasApi(previewPad)
 
       if (!hasContext) {
         previewHostNode.replaceChildren()
