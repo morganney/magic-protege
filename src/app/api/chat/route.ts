@@ -10,7 +10,7 @@ You must be warm, concise, and concrete.
 Ground your response in the actual image content when an image is provided.
 Do not invent objects, colors, or details that are not clearly visible.
 If uncertain, explicitly say what is uncertain.
-The only drawable command kinds available are draw-path, draw-circle, and erase-rect.
+The only drawable command kinds available are draw-path, draw-line, draw-circle, draw-rect, draw-bezier, draw-ellipse, draw-polygon, draw-arc, fill-rect, fill-circle, fill-polygon, and erase-rect.
 When asked what commands are available, list only those command kinds.
 When asked to draw complex objects (for example, trees), decompose them into multiple primitive commands.
 When no user intent is clear, ask one clarifying question.
@@ -40,6 +40,27 @@ const drawPathCommandSchema = z.object({
   }),
 })
 
+const drawLineCommandSchema = z.object({
+  kind: z.literal('draw-line'),
+  start: z.object({
+    x: z.number().min(0).max(100),
+    y: z.number().min(0).max(100),
+  }),
+  end: z.object({
+    x: z.number().min(0).max(100),
+    y: z.number().min(0).max(100),
+  }),
+  style: z.object({
+    strokeWidth: z.number().min(1).max(40),
+    lineCap: z.enum(['butt', 'round', 'square']).optional(),
+    lineJoin: z.enum(['bevel', 'round', 'miter']).optional(),
+    color: z
+      .string()
+      .regex(/^#[0-9a-fA-F]{6}$/)
+      .optional(),
+  }),
+})
+
 const drawCircleCommandSchema = z.object({
   kind: z.literal('draw-circle'),
   center: z.object({
@@ -51,6 +72,170 @@ const drawCircleCommandSchema = z.object({
     strokeWidth: z.number().min(1).max(40),
     lineCap: z.enum(['butt', 'round', 'square']).optional(),
     lineJoin: z.enum(['bevel', 'round', 'miter']).optional(),
+    color: z
+      .string()
+      .regex(/^#[0-9a-fA-F]{6}$/)
+      .optional(),
+  }),
+})
+
+const drawRectCommandSchema = z.object({
+  kind: z.literal('draw-rect'),
+  rect: z.object({
+    x: z.number().min(0).max(100),
+    y: z.number().min(0).max(100),
+    width: z.number().min(1).max(100),
+    height: z.number().min(1).max(100),
+  }),
+  style: z.object({
+    strokeWidth: z.number().min(1).max(40),
+    lineCap: z.enum(['butt', 'round', 'square']).optional(),
+    lineJoin: z.enum(['bevel', 'round', 'miter']).optional(),
+    color: z
+      .string()
+      .regex(/^#[0-9a-fA-F]{6}$/)
+      .optional(),
+  }),
+})
+
+const drawBezierCommandSchema = z.object({
+  kind: z.literal('draw-bezier'),
+  start: z.object({
+    x: z.number().min(0).max(100),
+    y: z.number().min(0).max(100),
+  }),
+  control1: z.object({
+    x: z.number().min(0).max(100),
+    y: z.number().min(0).max(100),
+  }),
+  control2: z.object({
+    x: z.number().min(0).max(100),
+    y: z.number().min(0).max(100),
+  }),
+  end: z.object({
+    x: z.number().min(0).max(100),
+    y: z.number().min(0).max(100),
+  }),
+  style: z.object({
+    strokeWidth: z.number().min(1).max(40),
+    lineCap: z.enum(['butt', 'round', 'square']).optional(),
+    lineJoin: z.enum(['bevel', 'round', 'miter']).optional(),
+    color: z
+      .string()
+      .regex(/^#[0-9a-fA-F]{6}$/)
+      .optional(),
+  }),
+  segments: z.number().int().min(8).max(128).optional(),
+})
+
+const drawEllipseCommandSchema = z.object({
+  kind: z.literal('draw-ellipse'),
+  center: z.object({
+    x: z.number().min(0).max(100),
+    y: z.number().min(0).max(100),
+  }),
+  radiusX: z.number().min(1).max(100),
+  radiusY: z.number().min(1).max(100),
+  style: z.object({
+    strokeWidth: z.number().min(1).max(40),
+    lineCap: z.enum(['butt', 'round', 'square']).optional(),
+    lineJoin: z.enum(['bevel', 'round', 'miter']).optional(),
+    color: z
+      .string()
+      .regex(/^#[0-9a-fA-F]{6}$/)
+      .optional(),
+  }),
+})
+
+const drawPolygonCommandSchema = z.object({
+  kind: z.literal('draw-polygon'),
+  points: z
+    .array(
+      z.object({
+        x: z.number().min(0).max(100),
+        y: z.number().min(0).max(100),
+      }),
+    )
+    .min(3),
+  closed: z.boolean().optional(),
+  style: z.object({
+    strokeWidth: z.number().min(1).max(40),
+    lineCap: z.enum(['butt', 'round', 'square']).optional(),
+    lineJoin: z.enum(['bevel', 'round', 'miter']).optional(),
+    color: z
+      .string()
+      .regex(/^#[0-9a-fA-F]{6}$/)
+      .optional(),
+  }),
+})
+
+const drawArcCommandSchema = z.object({
+  kind: z.literal('draw-arc'),
+  center: z.object({
+    x: z.number().min(0).max(100),
+    y: z.number().min(0).max(100),
+  }),
+  radius: z.number().min(1).max(100),
+  startAngleDegrees: z.number().min(-1440).max(1440),
+  endAngleDegrees: z.number().min(-1440).max(1440),
+  counterclockwise: z.boolean().optional(),
+  style: z.object({
+    strokeWidth: z.number().min(1).max(40),
+    lineCap: z.enum(['butt', 'round', 'square']).optional(),
+    lineJoin: z.enum(['bevel', 'round', 'miter']).optional(),
+    color: z
+      .string()
+      .regex(/^#[0-9a-fA-F]{6}$/)
+      .optional(),
+  }),
+  segments: z.number().int().min(8).max(128).optional(),
+})
+
+const fillRectCommandSchema = z.object({
+  kind: z.literal('fill-rect'),
+  rect: z.object({
+    x: z.number().min(0).max(100),
+    y: z.number().min(0).max(100),
+    width: z.number().min(1).max(100),
+    height: z.number().min(1).max(100),
+  }),
+  style: z.object({
+    strokeWidth: z.number().min(1).max(40),
+    color: z
+      .string()
+      .regex(/^#[0-9a-fA-F]{6}$/)
+      .optional(),
+  }),
+})
+
+const fillCircleCommandSchema = z.object({
+  kind: z.literal('fill-circle'),
+  center: z.object({
+    x: z.number().min(0).max(100),
+    y: z.number().min(0).max(100),
+  }),
+  radius: z.number().min(1).max(100),
+  style: z.object({
+    strokeWidth: z.number().min(1).max(40),
+    color: z
+      .string()
+      .regex(/^#[0-9a-fA-F]{6}$/)
+      .optional(),
+  }),
+})
+
+const fillPolygonCommandSchema = z.object({
+  kind: z.literal('fill-polygon'),
+  points: z
+    .array(
+      z.object({
+        x: z.number().min(0).max(100),
+        y: z.number().min(0).max(100),
+      }),
+    )
+    .min(3),
+  style: z.object({
+    strokeWidth: z.number().min(1).max(40),
     color: z
       .string()
       .regex(/^#[0-9a-fA-F]{6}$/)
@@ -70,12 +255,21 @@ const eraseRectCommandSchema = z.object({
 
 const canvasCommandSchema = z.discriminatedUnion('kind', [
   drawPathCommandSchema,
+  drawLineCommandSchema,
   drawCircleCommandSchema,
+  drawRectCommandSchema,
+  drawBezierCommandSchema,
+  drawEllipseCommandSchema,
+  drawPolygonCommandSchema,
+  drawArcCommandSchema,
+  fillRectCommandSchema,
+  fillCircleCommandSchema,
+  fillPolygonCommandSchema,
   eraseRectCommandSchema,
 ])
 
 const drawIntentPattern =
-  /\b(draw|add|edit|finish|continue|erase|remove|fix|update|change|improve|complete)\b/i
+  /\b(draw|add|edit|finish|continue|erase|remove|fix|update|change|improve|complete|fill|paint|color)\b/i
 
 function getLastUserText(
   history: Array<{ role: 'user' | 'assistant'; text: string }>,
@@ -114,7 +308,21 @@ type DrawCircleCommand = {
   }
 }
 
-type FallbackCommand = DrawPathCommand | DrawCircleCommand
+type FillRectCommand = {
+  kind: 'fill-rect'
+  rect: {
+    x: number
+    y: number
+    width: number
+    height: number
+  }
+  style: {
+    strokeWidth: number
+    color: string
+  }
+}
+
+type FallbackCommand = DrawPathCommand | DrawCircleCommand | FillRectCommand
 
 function pushTreeCommands(
   commands: FallbackCommand[],
@@ -175,6 +383,37 @@ function pushTreeCommands(
 }
 
 function buildFallbackCanvasUpdate(text: string) {
+  const hexColorMatch = text.match(/#[0-9a-fA-F]{6}/)
+  const requestedColor = hexColorMatch ? hexColorMatch[0].toUpperCase() : '#6B3E26'
+  const explicitFillRectRequest = /\bfill-rect\b/i.test(text)
+  const canInteriorFillRequest =
+    /\b(fill|paint|color)\b/i.test(text) && /\b(can|interior|inside)\b/i.test(text)
+
+  if (explicitFillRectRequest || canInteriorFillRequest) {
+    return {
+      requiresConfirmation: true,
+      reason: 'fallback generated fill command for can interior',
+      confirmationPrompt:
+        "I prepared a fill for the can interior. Review the preview and click Apply edit if you'd like this change.",
+      commands: [
+        {
+          kind: 'fill-rect' as const,
+          // Interior bounds for the default can sketch used in this app.
+          rect: {
+            x: 41,
+            y: 34,
+            width: 18,
+            height: 17,
+          },
+          style: {
+            strokeWidth: 2,
+            color: requestedColor,
+          },
+        },
+      ],
+    }
+  }
+
   const commands: FallbackCommand[] = []
 
   if (/\b(tree|trees|forest|pine|oak)\b/i.test(text)) {
@@ -312,7 +551,7 @@ export async function POST(request: Request) {
       }),
       apply_canvas_commands: tool({
         description:
-          'Return one or more concrete canvas commands to apply. Only use draw-path, draw-circle, and erase-rect. For complex objects, compose multiple primitive commands. Always include a brief confirmation prompt.',
+          'Return one or more concrete canvas commands to apply. Only use draw-path, draw-line, draw-circle, draw-rect, draw-bezier, draw-ellipse, draw-polygon, draw-arc, fill-rect, fill-circle, fill-polygon, and erase-rect. For complex objects, compose multiple primitive commands. Always include a brief confirmation prompt.',
         inputSchema: z.object({
           reason: z.string().min(4).max(220),
           confirmationPrompt: z.string().min(6).max(220),

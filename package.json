@@ -15,7 +15,7 @@
     "@ai-sdk/openai": "^3.0.36",
     "@ai-sdk/react": "^3.0.106",
     "ai": "^6.0.104",
-    "magic-crayon": "^1.0.0-rc.2",
+    "magic-crayon": "^1.0.0-rc.3",
     "next": "16.1.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",

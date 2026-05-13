@@ -6,7 +6,7 @@ import type {
   CommandApiStateV1,
   CommandBatchResultV1,
   MagicCrayonCommandV1,
-} from 'magic-crayon/command-api'
+} from 'magic-crayon/command/types'
 import styles from './page.module.css'
 
 type MagicCrayonElement = HTMLElement & {
@@ -29,7 +29,21 @@ type UpdateCanvasOutput = {
 
 type CanvasCommand = Extract<
   MagicCrayonCommandV1,
-  { kind: 'draw-path' | 'draw-circle' | 'erase-rect' }
+  {
+    kind:
+      | 'draw-path'
+      | 'draw-line'
+      | 'draw-circle'
+      | 'draw-rect'
+      | 'draw-bezier'
+      | 'draw-ellipse'
+      | 'draw-polygon'
+      | 'draw-arc'
+      | 'fill-rect'
+      | 'fill-circle'
+      | 'fill-polygon'
+      | 'erase-rect'
+  }
 >
 
 type ToolResult =
