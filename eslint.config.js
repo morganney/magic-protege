@@ -7,6 +7,12 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   reactYouMightNotNeedAnEffect.configs.recommended,
+  {
+    files: ['**/*.{js,ts,tsx}'],
+    rules: {
+      'import/no-cycle': 'error',
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
