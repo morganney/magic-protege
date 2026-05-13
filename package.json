@@ -9,7 +9,8 @@
     "build": "NODE_ENV=production next build",
     "start": "next start",
     "lint": "eslint --max-warnings=0",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "prepare": "husky"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.36",
@@ -22,19 +23,26 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
+    "@eslint/js": "^9.39.3",
+    "@types/node": "20.19.35",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "eslint": "9.39.3",
     "eslint-config-next": "16.1.6",
-    "eslint-plugin-react-you-might-not-need-an-effect": "^0.9.2",
-    "prettier": "^3.8.1",
-    "typescript": "^5"
+    "eslint-plugin-react-you-might-not-need-an-effect": "0.9.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.4",
+    "prettier": "3.8.1",
+    "typescript": "5.9.3"
   },
   "prettier": {
     "arrowParens": "avoid",
     "printWidth": 90,
     "semi": false,
     "singleQuote": true
+  },
+  "lint-staged": {
+    "*.{js,ts,tsx,json,css,md,html,yml}": "prettier --write",
+    "*.{js,ts,tsx}": "eslint --fix"
   }
 }
