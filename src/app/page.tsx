@@ -108,6 +108,18 @@ function extractSuggestions(messages: ChatMessage[]): string[] {
   return Array.from(new Set(suggestions)).slice(-4)
 }
 
+function formatRejectedCommandDetails(commandOutput: UpdateCanvasOutput): string {
+  const details = commandOutput.commands
+    .map((command, index) => {
+      const commandLabel = `${index + 1}:${command.kind}`
+
+      return commandLabel
+    })
+    .join(', ')
+
+  return details.length > 0 ? details : 'none'
+}
+
 export default function Home() {
   const hostRef = useRef<HTMLDivElement>(null)
   const previewHostRef = useRef<HTMLDivElement>(null)
@@ -257,7 +269,19 @@ export default function Home() {
     const rejectedResults = batch.results.filter(result => result.status === 'rejected')
 
     if (rejectedResults.length > 0) {
-      throw new Error('One or more canvas commands were rejected.')
+      const rejectionDetails = rejectedResults
+        .map((result, index) => {
+          const reason = result.reason?.trim().length
+            ? result.reason
+            : 'No reason provided'
+
+          return `${index + 1}:${result.command.kind} (${reason})`
+        })
+        .join(', ')
+
+      throw new Error(
+        `One or more canvas commands were rejected. Rejections: ${rejectionDetails}. Requested commands: ${formatRejectedCommandDetails(commandOutput)}.`,
+      )
     }
   }
 
@@ -481,6 +505,12 @@ export default function Home() {
     try {
       await applyCanvasCommands(pendingCanvasCommand)
       clearPendingCanvasChange()
+    } catch (error) {
+      setErrorText(
+        error instanceof Error
+          ? error.message
+          : 'Could not apply this edit. Please try again.',
+      )
     } finally {
       setIsApplyingCanvasChange(false)
     }

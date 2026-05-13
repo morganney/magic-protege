@@ -269,7 +269,15 @@ const canvasCommandSchema = z.discriminatedUnion('kind', [
 ])
 
 const drawIntentPattern =
-  /\b(draw|add|edit|finish|continue|erase|remove|fix|update|change|improve|complete|fill|paint|color)\b/i
+  /\b(draw|add|edit|finish|continue|erase|remove|fix|update|change|improve|complete|fill)\b/i
+
+const colorPaintIntentPattern = /\b(color|paint)\b/i
+
+const colorPaintEditContextPattern =
+  /\b(can|interior|inside|drawing|canvas|background|sky|grass|sun|tree|trees|forest|line|shape|circle|rect|path|area)\b/i
+
+const colorPaintEditRequestPattern =
+  /\b(please|can you|could you|would you|let'?s|make|set|change|update|add|draw|fill|erase|remove|paint|color|turn)\b/i
 
 function getLastUserText(
   history: Array<{ role: 'user' | 'assistant'; text: string }>,
@@ -286,7 +294,15 @@ function getLastUserText(
 }
 
 function isDrawIntent(text: string): boolean {
-  return drawIntentPattern.test(text)
+  if (drawIntentPattern.test(text)) {
+    return true
+  }
+
+  return (
+    colorPaintIntentPattern.test(text) &&
+    colorPaintEditContextPattern.test(text) &&
+    colorPaintEditRequestPattern.test(text)
+  )
 }
 
 type DrawPathCommand = {
@@ -386,8 +402,10 @@ function buildFallbackCanvasUpdate(text: string) {
   const hexColorMatch = text.match(/#[0-9a-fA-F]{6}/)
   const requestedColor = hexColorMatch ? hexColorMatch[0].toUpperCase() : '#6B3E26'
   const explicitFillRectRequest = /\bfill-rect\b/i.test(text)
+  const canInteriorTargetPattern =
+    /\b(can\s+interior|inside\s+(?:the\s+)?can|interior\s+of\s+(?:the\s+)?can)\b/i
   const canInteriorFillRequest =
-    /\b(fill|paint|color)\b/i.test(text) && /\b(can|interior|inside)\b/i.test(text)
+    /\b(fill|paint|color)\b/i.test(text) && canInteriorTargetPattern.test(text)
 
   if (explicitFillRectRequest || canInteriorFillRequest) {
     return {
