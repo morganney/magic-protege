@@ -4,6 +4,20 @@ body {
   overflow-x: hidden;
 }
 
+:global(:root) {
+  /*
+   * Fluid root size based on these design targets:
+   * - Mobile floor: 14px (0.875rem)
+   * - Standard viewport (~768px): 16px (1rem)
+   * - Large viewport baseline (~1200px): 18px (1.125rem)
+   * - Accessibility upper cap: 28px (1.75rem)
+   *
+   * Preferred value is a linear interpolation between ~768px and ~1200px,
+   * then clamped so it never drops below 14px or exceeds 28px.
+   */
+  font-size: clamp(0.875rem, calc(0.7775rem + 0.463vw), 1.75rem);
+}
+
 body {
   color: #111827;
   background: #f3f4f6;

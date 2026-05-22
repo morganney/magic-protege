@@ -1,5 +1,8 @@
-import type { Metadata } from 'next'
 import './globals.module.css'
+import type { Metadata } from 'next'
+import { Main } from './components/main'
+import { Header } from './components/header'
+import { Footer } from './components/footer'
 
 export const metadata: Metadata = {
   title: 'Magic Protege',
@@ -13,7 +16,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <Main>
+          <Header />
+          {children}
+          <Footer />
+        </Main>
+      </body>
     </html>
   )
 }

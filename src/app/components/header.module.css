@@ -1,0 +1,12 @@
+.header {
+  display: flex;
+  flex-direction: column;
+}
+
+.heading {
+  font-size: 1.2rem;
+}
+
+.subheading {
+  font-size: 0.875rem;
+}
