@@ -322,6 +322,28 @@ async function main() {
     where c.id = rc.id
       and (rc.rank % 2 = 1)
   `
+
+  /*
+   * Guarantee at least one chat-first row on every seed run by clearing drawing_id
+   * for the earliest chat only when no unlinked chats exist.
+   */
+  await sql`
+    with chat_stats as (
+      select count(*) filter (where drawing_id is null) as null_drawing_count
+      from chat
+    ),
+    first_chat as (
+      select id
+      from chat
+      order by created_at, id
+      limit 1
+    )
+    update chat as c
+    set drawing_id = null
+    from chat_stats as cs, first_chat as fc
+    where c.id = fc.id
+      and cs.null_drawing_count = 0
+  `
 }
 
 try {

@@ -7,12 +7,12 @@ export const usrRelations = relations(usr, ({ many }) => ({
   chats: many(chat),
 }))
 
-export const drawingRelations = relations(drawing, ({ one, many }) => ({
+export const drawingRelations = relations(drawing, ({ one }) => ({
   usr: one(usr, {
     fields: [drawing.usrId],
     references: [usr.id],
   }),
-  chats: many(chat),
+  chat: one(chat),
 }))
 
 export const chatRelations = relations(chat, ({ one, many }) => ({

@@ -118,7 +118,7 @@ For `/draw/[slug]`:
 
 1. Creating or attaching chat to a drawing should use a transaction.
 2. On unique-constraint conflict for `drawingId`, fetch and return existing chat.
-3. Always enforce account ownership in queries and mutations.
+3. Always enforce user ownership in queries and mutations.
 
 ## Middleware Scope Notes
 
