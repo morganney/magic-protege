@@ -188,17 +188,17 @@ async function main() {
 
   if (shouldSeedIfEmpty) {
     const [{ hasRows }] = await sql<{ hasRows: boolean }[]>`
-      select exists (select 1 from "account" limit 1) as "hasRows"
+      select exists (select 1 from "usr" limit 1) as "hasRows"
     `
 
     if (hasRows) {
-      console.log('Seed skipped: account table already has rows.')
+      console.log('Seed skipped: usr table already has rows.')
       return
     }
   }
 
   await seed(db, schema, { count, seed: seedValue }).refine(funcs => ({
-    account: {
+    usr: {
       count,
       columns: {
         email: funcs.email(),
@@ -225,6 +225,7 @@ async function main() {
     },
     chat: {
       columns: {
+        drawingId: funcs.default({ defaultValue: null }),
         slug: funcs.uuid(),
       },
       with: {
@@ -294,29 +295,29 @@ async function main() {
   `
 
   /*
-   * Link chats to drawings by per-account rank; odd-ranked chats remain linked and
+   * Link chats to drawings by per-user rank; odd-ranked chats remain linked and
    * even-ranked chats stay unlinked to preserve chat-first scenarios in seed data.
    */
   await sql`
     with ranked_drawings as (
       select
         id,
-        account_id,
-        row_number() over (partition by account_id order by created_at, id) as rank
+        usr_id,
+        row_number() over (partition by usr_id order by created_at, id) as rank
       from drawing
     ),
     ranked_chats as (
       select
         id,
-        account_id,
-        row_number() over (partition by account_id order by created_at, id) as rank
+        usr_id,
+        row_number() over (partition by usr_id order by created_at, id) as rank
       from chat
     )
     update chat as c
     set drawing_id = d.id
     from ranked_chats as rc
     inner join ranked_drawings as d
-      on d.account_id = rc.account_id
+      on d.usr_id = rc.usr_id
       and d.rank = rc.rank
     where c.id = rc.id
       and (rc.rank % 2 = 1)

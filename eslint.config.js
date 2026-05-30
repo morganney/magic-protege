@@ -13,6 +13,7 @@ const eslintConfig = defineConfig([
     files: ['**/*.{js,ts,tsx}'],
     rules: {
       'import/no-cycle': 'error',
+      eqeqeq: ['error', 'always'],
     },
   },
   {
