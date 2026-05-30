@@ -1,60 +1,9 @@
 {
-  "id": "35a2ae40-1e2f-42fc-8ccc-3056d6ad0e38",
+  "id": "cb701b2d-f2e6-4fa1-af3e-a63e4b36355a",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
-    "public.account": {
-      "name": "account",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "email": {
-          "name": "email",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "display_name": {
-          "name": "display_name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "account_email_unique": {
-          "name": "account_email_unique",
-          "nullsNotDistinct": false,
-          "columns": ["email"]
-        }
-      },
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.chat": {
       "name": "chat",
       "schema": "",
@@ -65,8 +14,8 @@
           "primaryKey": true,
           "notNull": true
         },
-        "account_id": {
-          "name": "account_id",
+        "usr_id": {
+          "name": "usr_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -99,26 +48,11 @@
         }
       },
       "indexes": {
-        "chat_account_id_idx": {
-          "name": "chat_account_id_idx",
+        "chat_usr_id_idx": {
+          "name": "chat_usr_id_idx",
           "columns": [
             {
-              "expression": "account_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "chat_drawing_id_idx": {
-          "name": "chat_drawing_id_idx",
-          "columns": [
-            {
-              "expression": "drawing_id",
+              "expression": "usr_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -131,11 +65,11 @@
         }
       },
       "foreignKeys": {
-        "chat_account_id_account_id_fk": {
-          "name": "chat_account_id_account_id_fk",
+        "chat_usr_id_usr_id_fk": {
+          "name": "chat_usr_id_usr_id_fk",
           "tableFrom": "chat",
-          "tableTo": "account",
-          "columnsFrom": ["account_id"],
+          "tableTo": "usr",
+          "columnsFrom": ["usr_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -156,6 +90,11 @@
           "name": "chat_slug_unique",
           "nullsNotDistinct": false,
           "columns": ["slug"]
+        },
+        "chat_drawing_id_unq": {
+          "name": "chat_drawing_id_unq",
+          "nullsNotDistinct": false,
+          "columns": ["drawing_id"]
         }
       },
       "policies": {},
@@ -255,8 +194,8 @@
           "primaryKey": true,
           "notNull": true
         },
-        "account_id": {
-          "name": "account_id",
+        "usr_id": {
+          "name": "usr_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
@@ -302,11 +241,11 @@
         }
       },
       "indexes": {
-        "drawing_account_id_idx": {
-          "name": "drawing_account_id_idx",
+        "drawing_usr_id_idx": {
+          "name": "drawing_usr_id_idx",
           "columns": [
             {
-              "expression": "account_id",
+              "expression": "usr_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -319,11 +258,11 @@
         }
       },
       "foreignKeys": {
-        "drawing_account_id_account_id_fk": {
-          "name": "drawing_account_id_account_id_fk",
+        "drawing_usr_id_usr_id_fk": {
+          "name": "drawing_usr_id_usr_id_fk",
           "tableFrom": "drawing",
-          "tableTo": "account",
-          "columnsFrom": ["account_id"],
+          "tableTo": "usr",
+          "columnsFrom": ["usr_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -331,6 +270,57 @@
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.usr": {
+      "name": "usr",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "display_name": {
+          "name": "display_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "usr_email_unique": {
+          "name": "usr_email_unique",
+          "nullsNotDistinct": false,
+          "columns": ["email"]
+        }
+      },
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

@@ -188,17 +188,17 @@ async function main() {
 
   if (shouldSeedIfEmpty) {
     const [{ hasRows }] = await sql<{ hasRows: boolean }[]>`
-      select exists (select 1 from "account" limit 1) as "hasRows"
+      select exists (select 1 from "usr" limit 1) as "hasRows"
     `
 
     if (hasRows) {
-      console.log('Seed skipped: account table already has rows.')
+      console.log('Seed skipped: usr table already has rows.')
       return
     }
   }
 
   await seed(db, schema, { count, seed: seedValue }).refine(funcs => ({
-    account: {
+    usr: {
       count,
       columns: {
         email: funcs.email(),
@@ -225,6 +225,7 @@ async function main() {
     },
     chat: {
       columns: {
+        drawingId: funcs.default({ defaultValue: null }),
         slug: funcs.uuid(),
       },
       with: {
@@ -294,54 +295,32 @@ async function main() {
   `
 
   /*
-   * Link chats to drawings by per-account rank; odd-ranked chats remain linked and
+   * Link chats to drawings by per-user rank; odd-ranked chats remain linked and
    * even-ranked chats stay unlinked to preserve chat-first scenarios in seed data.
    */
   await sql`
     with ranked_drawings as (
       select
         id,
-        account_id,
-        row_number() over (partition by account_id order by created_at, id) as rank
+        usr_id,
+        row_number() over (partition by usr_id order by created_at, id) as rank
       from drawing
     ),
     ranked_chats as (
       select
         id,
-        account_id,
-        row_number() over (partition by account_id order by created_at, id) as rank
+        usr_id,
+        row_number() over (partition by usr_id order by created_at, id) as rank
       from chat
     )
     update chat as c
     set drawing_id = d.id
     from ranked_chats as rc
     inner join ranked_drawings as d
-      on d.account_id = rc.account_id
+      on d.usr_id = rc.usr_id
       and d.rank = rc.rank
     where c.id = rc.id
       and (rc.rank % 2 = 1)
-  `
-
-  /*
-   * Guarantee at least one chat-first row on every seed run by clearing drawing_id
-   * for the earliest chat only when no unlinked chats exist.
-   */
-  await sql`
-    with chat_stats as (
-      select count(*) filter (where drawing_id is null) as null_drawing_count
-      from chat
-    ),
-    first_chat as (
-      select id
-      from chat
-      order by created_at, id
-      limit 1
-    )
-    update chat as c
-    set drawing_id = null
-    from chat_stats as cs, first_chat as fc
-    where c.id = fc.id
-      and cs.null_drawing_count = 0
   `
 }
 
