@@ -1,82 +1,18 @@
-import { loadEnvFile } from 'node:process'
+import { beforeEach, describe, expect, it } from 'vitest'
 
-import { createClient } from 'redis'
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest'
-
+import {
+  clearAuthIntegrationDatabaseState,
+  clearAuthIntegrationSessionState,
+} from '@/app/api/test-utils/auth-test-state'
+import { POST as postSignUp } from '@/app/api/sign-up/route'
+import { closeSessionStoreConnection, getSessionById } from '@/auth/session'
+import { generateId } from '@/db/id'
+import { sql } from '@/db/client'
 import type { Usr } from '@/db/schema'
 
-const { ENV_FILE } = process.env
-const envFile = ENV_FILE ?? '.env'
-
-loadEnvFile(envFile)
-
-const {
-  SESSION_KEY_PREFIX: sessionKeyPrefixEnv,
-  REDIS_URL,
-  REDIS_HOST,
-  REDIS_PORT,
-} = process.env
-
-type SignUpPost = typeof import('@/app/api/sign-up/route').POST
-
-let postSignUp: SignUpPost
-let sql: typeof import('@/db/client').sql
-let closeSessionStoreConnection: typeof import('@/auth/session').closeSessionStoreConnection
-let getSessionById: typeof import('@/auth/session').getSessionById
-
-const sessionKeyPrefix = sessionKeyPrefixEnv ?? 'mp:session:v1'
-
-async function clearDatabaseState() {
-  await sql`
-    truncate table
-      "chat_message",
-      "chat",
-      "drawing",
-      "usr"
-    restart identity
-    cascade
-  `
-}
-
-async function clearSessionState() {
-  const redisUrl =
-    REDIS_URL ?? `redis://${REDIS_HOST ?? '127.0.0.1'}:${REDIS_PORT ?? '6379'}`
-  const client = createClient({ url: redisUrl })
-
-  await client.connect()
-
-  try {
-    let cursor = '0'
-    do {
-      const result = await client.scan(cursor, {
-        MATCH: `${sessionKeyPrefix}:*`,
-        COUNT: 100,
-      })
-      cursor = result.cursor
-
-      if (result.keys.length > 0) {
-        await client.del(result.keys)
-      }
-    } while (cursor !== '0')
-  } finally {
-    await client.quit()
-  }
-}
-
-beforeAll(async () => {
-  const routeModule = await import('@/app/api/sign-up/route')
-  const dbClientModule = await import('@/db/client')
-  const sessionModule = await import('@/auth/session')
-
-  postSignUp = routeModule.POST
-  sql = dbClientModule.sql
-  closeSessionStoreConnection = sessionModule.closeSessionStoreConnection
-  getSessionById = sessionModule.getSessionById
-})
-
 beforeEach(async () => {
-  await clearDatabaseState()
-  await clearSessionState()
+  await clearAuthIntegrationDatabaseState(sql)
+  await clearAuthIntegrationSessionState()
 })
 
 describe('POST /api/sign-up', () => {
@@ -169,7 +105,7 @@ describe('POST /api/sign-up', () => {
   })
 
   it('returns 409 when email already exists', async () => {
-    const existingId = crypto.randomUUID()
+    const existingId = generateId()
     const now = new Date().toISOString()
 
     await sql`

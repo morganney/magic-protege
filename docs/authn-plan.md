@@ -20,15 +20,14 @@ Related exploration notes in memory:
 2. Password hashing utilities, Redis session helpers, and cookie helpers are implemented.
 3. Sign-up endpoint is implemented with integration coverage in src/app/api/sign-up/route.test.ts.
 4. Integration CI orchestration lives in .github/workflows/integration-tests.yml.
-5. Next implementation target is login (see Step 1 below).
+5. Login endpoint is implemented with integration coverage in src/app/api/login/route.test.ts.
+6. Next implementation target is logout/session introspection (see Step 2 below).
 
 ## Remaining Steps (Renumbered)
 
 ### Step 1: Login endpoint
 
-1. Add login API route with email/password validation and credential verification.
-2. Replace prior active session for that user and issue a fresh cookie.
-3. Verify success, wrong password, and unknown user cases.
+Completed.
 
 ### Step 2: Logout and session introspection
 
