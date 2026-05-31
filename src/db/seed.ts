@@ -184,6 +184,14 @@ async function main() {
   const shouldSeedIfEmpty = process.argv.includes('--if-empty')
   const count = getNumberEnv('SEED_COUNT', 10)
   const seedValue = getNumberEnv('SEED_VALUE', 42)
+
+  /**
+   * Fail closed in production-like runs to avoid writing predictable credentials.
+   */
+  if (process.env.NODE_ENV === 'production' && !process.env.SEED_PASSWORD) {
+    throw new Error('SEED_PASSWORD must be set when seeding in production')
+  }
+
   const seedPassword = process.env.SEED_PASSWORD ?? defaultSeedPassword
   const seedPasswordHash = await hashPassword(seedPassword)
 

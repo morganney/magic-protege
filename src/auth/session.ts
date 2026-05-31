@@ -51,6 +51,10 @@ async function getRedisClient() {
     redisClient = createClient({
       url: getRedisUrl(),
     })
+
+    redisClient.on('error', error => {
+      console.error('Redis session store error:', error)
+    })
   }
 
   if (!redisClient.isOpen) {
@@ -114,8 +118,27 @@ export async function createSessionForUser(userId: string) {
 
 export async function replaceSessionForUser(userId: string) {
   const client = await getRedisClient()
-  const priorSessionId = await client.get(getUserSessionKey(userId))
-  const nextSession = await createSessionForUser(userId)
+  const sessionId = randomUUID()
+  const now = nowIso()
+  const nextSession: SessionRecord = {
+    sessionId,
+    userId,
+    createdAt: now,
+    lastSeenAt: now,
+  }
+
+  await client.set(getSessionKey(sessionId), JSON.stringify(nextSession), {
+    EX: SESSION_TTL_SECONDS,
+  })
+
+  /**
+   * Atomically replace user->session mapping and capture the prior session id.
+   * This prevents races from leaving multiple active sessions for one user.
+   */
+  const priorSessionId = await client.set(getUserSessionKey(userId), sessionId, {
+    EX: SESSION_TTL_SECONDS,
+    GET: true,
+  })
 
   if (priorSessionId && priorSessionId !== nextSession.sessionId) {
     await client.del(getSessionKey(priorSessionId))
