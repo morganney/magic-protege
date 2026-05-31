@@ -103,6 +103,33 @@ describe('POST /api/login', () => {
     expect(payload).toEqual({ error: 'Invalid credentials.' })
   })
 
+  it('returns 401 when user has no password hash', async () => {
+    const userId = generateId()
+    const now = new Date().toISOString()
+
+    await sql`
+      insert into "usr" (id, email, display_name, password_hash, last_login_at, password_updated_at, created_at, updated_at)
+      values (${userId}, ${'oauth-only@example.com'}, ${'OAuth User'}, ${null}, ${now}, ${null}, ${now}, ${now})
+    `
+
+    const request = new Request('http://localhost/api/login', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: 'oauth-only@example.com',
+        password: 'test-password-123',
+      }),
+    })
+
+    const response = await postLogin(request)
+    const payload = await response.json()
+
+    expect(response.status).toBe(401)
+    expect(payload).toEqual({ error: 'Invalid credentials.' })
+  })
+
   it('logs in, rotates existing session, and sets auth cookie', async () => {
     const userId = generateId()
     const priorLastLoginAt = '2020-01-01T00:00:00.000Z'

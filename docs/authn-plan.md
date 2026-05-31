@@ -86,6 +86,7 @@ Completed.
 - Session policy: one active session per user
 - TTL: 7 days with sliding refresh
 - Cookie: mp_session, httpOnly, SameSite=Lax, secure in production
+- Login credential checks: always run bcrypt compare using a fixed dummy hash fallback when stored password hash is missing
 - Protection model: middleware plus backend checks
 - Scope includes sign-up
 - CSRF hardening deferred to a follow-up iteration
