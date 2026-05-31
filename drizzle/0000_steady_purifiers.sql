@@ -35,6 +35,9 @@ CREATE TABLE "usr" (
 	"id" uuid PRIMARY KEY NOT NULL,
 	"email" text NOT NULL,
 	"display_name" text,
+	"password_hash" text,
+	"last_login_at" timestamp with time zone,
+	"password_updated_at" timestamp with time zone,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "usr_email_unique" UNIQUE("email")

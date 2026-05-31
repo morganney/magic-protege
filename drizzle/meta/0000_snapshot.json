@@ -1,5 +1,5 @@
 {
-  "id": "8efcbeef-ba66-418b-ba72-9f9a21f6cc1e",
+  "id": "a571d58b-6b41-46b1-9e90-1144d5afc69e",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -293,6 +293,24 @@
         "display_name": {
           "name": "display_name",
           "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "password_hash": {
+          "name": "password_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_login_at": {
+          "name": "last_login_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "password_updated_at": {
+          "name": "password_updated_at",
+          "type": "timestamp with time zone",
           "primaryKey": false,
           "notNull": false
         },

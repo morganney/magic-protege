@@ -1,6 +1,7 @@
 import { reset, seed } from 'drizzle-seed'
 import type { SaveDetail } from 'magic-crayon'
 
+import { hashPassword } from '../auth/password.js'
 import { db, schema, sql } from './client.js'
 
 /*
@@ -162,6 +163,8 @@ const aiSdkStyleContentTemplateJson = aiSdkStyleContentTemplates.map(template =>
   JSON.stringify(template),
 )
 
+const defaultSeedPassword = 'local-dev-password'
+
 function getNumberEnv(name: string, fallback: number) {
   const value = process.env[name]
   if (!value) {
@@ -181,6 +184,8 @@ async function main() {
   const shouldSeedIfEmpty = process.argv.includes('--if-empty')
   const count = getNumberEnv('SEED_COUNT', 10)
   const seedValue = getNumberEnv('SEED_VALUE', 42)
+  const seedPassword = process.env.SEED_PASSWORD ?? defaultSeedPassword
+  const seedPasswordHash = await hashPassword(seedPassword)
 
   if (shouldReset) {
     await reset(db, schema)
@@ -203,6 +208,7 @@ async function main() {
       columns: {
         email: funcs.email(),
         displayName: funcs.fullName(),
+        passwordHash: funcs.valuesFromArray({ values: [seedPasswordHash] }),
       },
       with: {
         drawing: [
