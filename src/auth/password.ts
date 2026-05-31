@@ -1,6 +1,16 @@
 import bcrypt from 'bcrypt'
 
 const DEFAULT_BCRYPT_COST = 12
+/*
+ * Fallback bcrypt hash used when a user has no stored password hash.
+ * This ensures verifyPassword still performs comparable bcrypt work
+ * to reduce account-state timing differences during login.
+ */
+const DUMMY_PASSWORD_HASH = '$2b$12$iE3OrfJ1XbnArwCgvz1AFuM.XGYLwAr6SVm6fqS3SM1HRNAVF46Q6'
+
+function getComparablePasswordHash(passwordHash: string | null) {
+  return passwordHash ?? DUMMY_PASSWORD_HASH
+}
 
 function getBcryptCost() {
   const value = process.env.BCRYPT_COST
@@ -26,9 +36,5 @@ export async function hashPassword(password: string) {
 }
 
 export async function verifyPassword(password: string, passwordHash: string | null) {
-  if (!passwordHash) {
-    return false
-  }
-
-  return bcrypt.compare(password, passwordHash)
+  return bcrypt.compare(password, getComparablePasswordHash(passwordHash))
 }

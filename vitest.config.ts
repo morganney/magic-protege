@@ -11,6 +11,8 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['src/app/api/**/*.test.ts'],
+    fileParallelism: false,
+    reporters: ['tree'],
     testTimeout: 30_000,
   },
 })
