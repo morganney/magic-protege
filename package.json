@@ -20,12 +20,16 @@
     "db:seed:append": "tsx --env-file=.env ./src/db/seed.ts",
     "db:seed:reset": "tsx --env-file=.env ./src/db/seed.ts --reset",
     "db:setup": "npm run db:migrate && tsx --env-file=.env ./src/db/seed.ts --if-empty",
+    "auth:check-cookie": "tsx ./scripts/utils/check-cookie.ts",
+    "auth:check-password": "tsx ./scripts/utils/check-password.ts",
+    "auth:check-session": "tsx ./scripts/utils/check-session.ts",
     "prepare": "husky"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.63",
     "@ai-sdk/react": "^3.0.182",
     "ai": "^6.0.180",
+    "bcrypt": "^6.0.0",
     "drizzle-orm": "^0.45.2",
     "magic-crayon": "^1.0.0-rc.3",
     "next": "^16.2.6",
@@ -33,10 +37,12 @@
     "postgres": "^3.4.9",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
+    "redis": "^6.0.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.3",
+    "@types/bcrypt": "^6.0.0",
     "@types/node": "20.19.35",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",

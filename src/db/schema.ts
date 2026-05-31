@@ -17,6 +17,10 @@ export const usr = pgTable('usr', {
   id: uuid('id').primaryKey(),
   email: text('email').notNull().unique(),
   displayName: text('display_name'),
+  // Nullable to support accounts that authenticate via OAuth providers only.
+  passwordHash: text('password_hash'),
+  lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
+  passwordUpdatedAt: timestamp('password_updated_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })
