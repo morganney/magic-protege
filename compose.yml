@@ -11,13 +11,23 @@ services:
       - '${POSTGRES_PORT:?error}:5432'
     volumes:
       - db:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 2s
+      timeout: 5s
+      retries: 30
 
   session:
     image: redis:8.4.3-alpine
     ports:
-      - '6379:6379'
+      - '${REDIS_PORT:?error}:6379'
     volumes:
       - session:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 2s
+      timeout: 5s
+      retries: 30
 
 volumes:
   db:

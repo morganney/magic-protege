@@ -1,7 +1,7 @@
-import { randomUUID } from 'node:crypto'
-
 import { createClient, type RedisClientType } from 'redis'
 import { z } from 'zod'
+
+import { generateId } from '@/db/id'
 
 const {
   REDIS_URL,
@@ -87,38 +87,9 @@ function parseSessionRecord(value: string | null): SessionRecord | null {
   }
 }
 
-async function writeSessionRecord(record: SessionRecord) {
-  const client = await getRedisClient()
-
-  await client
-    .multi()
-    .set(getSessionKey(record.sessionId), JSON.stringify(record), {
-      EX: SESSION_TTL_SECONDS,
-    })
-    .set(getUserSessionKey(record.userId), record.sessionId, {
-      EX: SESSION_TTL_SECONDS,
-    })
-    .exec()
-}
-
-export async function createSessionForUser(userId: string) {
-  const sessionId = randomUUID()
-  const now = nowIso()
-  const record: SessionRecord = {
-    sessionId,
-    userId,
-    createdAt: now,
-    lastSeenAt: now,
-  }
-
-  await writeSessionRecord(record)
-
-  return record
-}
-
 export async function replaceSessionForUser(userId: string) {
   const client = await getRedisClient()
-  const sessionId = randomUUID()
+  const sessionId = generateId()
   const now = nowIso()
   const nextSession: SessionRecord = {
     sessionId,

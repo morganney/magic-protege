@@ -9,7 +9,9 @@ type CurrentConnectionInfo = {
   serverPort: number | null
 }
 
-loadEnvFile('.env')
+const envFile = process.env.ENV_FILE ?? '.env'
+
+loadEnvFile(envFile)
 
 function fail(message: string) {
   console.error(`db:migrate failed: ${message}`)
@@ -60,7 +62,7 @@ async function checkConnection(label: string) {
 
     if (currentDatabase !== database) {
       fail(
-        `Connected to database ${currentDatabase} instead of expected ${database}. Check .env.`,
+        `Connected to database ${currentDatabase} instead of expected ${database}. Check ${envFile}.`,
       )
     }
 
