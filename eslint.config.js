@@ -4,6 +4,7 @@ import nextTs from 'eslint-config-next/typescript'
 import eslintPluginN from 'eslint-plugin-n'
 import eslintPluginPromise from 'eslint-plugin-promise'
 import reactYouMightNotNeedAnEffect from 'eslint-plugin-react-you-might-not-need-an-effect'
+import eslintPluginVitest from '@vitest/eslint-plugin'
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -17,7 +18,7 @@ const eslintConfig = defineConfig([
     },
   },
   {
-    files: ['drizzle.config.ts', 'src/db/**/*.{js,ts}'],
+    files: ['drizzle.config.ts', 'src/db/**/*.{js,ts}', '**/*.test.ts'],
     languageOptions: {
       parserOptions: {
         projectService: true,
@@ -48,6 +49,15 @@ const eslintConfig = defineConfig([
       ],
       'promise/prefer-await-to-then': 'error',
       'promise/prefer-await-to-callbacks': 'error',
+    },
+  },
+  {
+    files: ['**/*.test.{ts,tsx}'],
+    plugins: {
+      vitest: eslintPluginVitest,
+    },
+    rules: {
+      ...eslintPluginVitest.configs.recommended.rules,
     },
   },
   // Override default ignores of eslint-config-next.

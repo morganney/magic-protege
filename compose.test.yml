@@ -1,0 +1,8 @@
+services:
+  db:
+    env_file:
+      - .env.test
+
+  session:
+    env_file:
+      - .env.test
