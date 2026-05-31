@@ -8,7 +8,7 @@ import { db, schema } from '@/db/client'
 import { generateId } from '@/db/id'
 
 const signUpBodySchema = z.object({
-  email: z.email().trim().max(320),
+  email: z.string().trim().max(320).pipe(z.email()),
   password: z.string().min(8).max(128),
   displayName: z.string().trim().min(1).max(120).optional(),
 })

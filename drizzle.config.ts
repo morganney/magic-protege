@@ -1,7 +1,9 @@
 import { defineConfig } from 'drizzle-kit'
 import { loadEnvFile } from 'node:process'
 
-loadEnvFile('.env')
+const envFile = process.env.ENV_FILE ?? '.env'
+
+loadEnvFile(envFile)
 
 const port = Number(process.env.POSTGRES_PORT ?? '5432')
 
